@@ -228,6 +228,8 @@
             \block_configurable_reports\event\report_edited::create_from_report($report, context_course::instance($course->id))->trigger();
 			$reportclass = new $reportclassname($data->id);
 			$data->type = $report->type;
+            $permissionscache = \cache::make('block_configurable_reports', 'permissions');
+            $permissionscache->set($data->id, []);
 			if(! $DB->update_record('block_configurable_reports', $data)){
 				print_error('errorsavingreport','block_configurable_reports');
 			}else{

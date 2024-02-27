@@ -34,6 +34,7 @@
 	var $starttime = 0;
 	var $endtime = 0;
     var $sql = '';
+    var $permissionscache = null;
 
 	function reports_base($report){
 		global $DB, $CFG, $USER;
@@ -55,14 +56,31 @@
 	function check_permissions($userid, $context){
 		global $DB, $CFG, $USER;
 
-		if(has_capability('block/configurable_reports:manageownreports', $context, $userid) && $this->config->ownerid == $userid)
-			return true;
+        if (empty($this->permissionscache)) {
+            $this->permissionscache = \cache::make('block_configurable_reports', 'permissions');
+        }
 
-		if(has_capability('block/configurable_reports:managereports', $context, $userid))
-			return true;
+        $contextcache = $this->permissionscache->get($this->config->id);
 
-		if(empty($this->config->visible))
-			return false;
+        if (isset($contextcache[$context->id][$userid])) {
+            return $contextcache[$context->id][$userid];
+        }
+
+		if(has_capability('block/configurable_reports:manageownreports', $context, $userid) && $this->config->ownerid == $userid) {
+            $contextcache[$context->id][$userid] = true;
+            $this->permissionscache->set($this->config->id, $contextcache);
+            return $contextcache[$context->id][$userid];
+        }
+
+		if(has_capability('block/configurable_reports:managereports', $context, $userid)) {
+            $contextcache[$context->id][$userid] = true;
+            $this->permissionscache->set($this->config->id, $contextcache);
+            return $contextcache[$context->id][$userid];
+        }
+
+		if(empty($this->config->visible)) {
+            return false;
+        }
 
 		$components = cr_unserialize($this->config->components);
 		$permissions = (isset($components['permissions']))? $components['permissions'] : array();
@@ -70,6 +88,7 @@
 		if(empty($permissions['elements'])){
 			return has_capability('block/configurable_reports:viewreports', $context);
 		} else {
+            // DO not check elements permission.
 			$i = 1;
 			$cond = array();
 			foreach($permissions['elements'] as $p){
@@ -81,7 +100,7 @@
 				$i++;
 			}
 			if (count($cond) == 1) {
-                return $cond[1];
+                $contextcache[$context->id][$userid] = $cond[1];
             } else {
 				$m = new EvalMath;
 				$orig = $dest = array();
@@ -101,12 +120,13 @@
 						$orig[] = 'c'.$j;
 						$dest[] = ($cond[$j])? 1 : 0;
 					}
-
-					return $m->evaluate(str_replace($orig,$dest,$logic));
+                    $contextcache[$context->id][$userid] = $m->evaluate(str_replace($orig,$dest,$logic));
 				} else {
-					return false;
+                    $contextcache[$context->id][$userid] = false;
 				}
 			}
+            $this->permissionscache->set($this->config->id, $contextcache);
+            return $contextcache[$context->id][$userid];
 		}
 	}
 

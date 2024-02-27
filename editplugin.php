@@ -114,6 +114,8 @@
 			}
 			$components[$comp]['elements'] = $elements;
 			$report->components = cr_serialize($components);
+            $permissionscache = \cache::make('block_configurable_reports', 'permissions');
+            $permissionscache->set($report->id, []);
 			$DB->update_record('block_configurable_reports',$report);
 			redirect(new moodle_url('/blocks/configurable_reports/editcomp.php', array('id' => $id, 'comp' => $comp)));
 			exit;
@@ -178,6 +180,8 @@
 				$allelements[$comp]['elements'] = $elements;
 
 				$report->components = cr_serialize($allelements);
+                $permissionscache = \cache::make('block_configurable_reports', 'permissions');
+                $permissionscache->set($report->id, []);
 				if(!$DB->update_record('block_configurable_reports',$report)){
 					print_error('errorsaving');
 				}
@@ -200,6 +204,8 @@
 
 				$allelements[$comp]['elements'][] = $cdata;
 				$report->components = cr_serialize($allelements, false);
+                $permissionscache = \cache::make('block_configurable_reports', 'permissions');
+                $permissionscache->set($report->id, []);
 				if(!$DB->update_record('block_configurable_reports',$report)){
 					print_error('errorsaving');
 				}
@@ -222,6 +228,8 @@
 
 		$allelements[$comp]['elements'][] = $cdata;
 		$report->components = cr_serialize($allelements);
+        $permissionscache = \cache::make('block_configurable_reports', 'permissions');
+        $permissionscache->set($report->id, []);
 		if(!$DB->update_record('block_configurable_reports',$report)){
 			print_error('errorsaving');
 		}

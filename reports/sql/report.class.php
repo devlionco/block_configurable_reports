@@ -107,6 +107,8 @@ class report_sql extends report_base {
         //$updaterecord->lastrun = time();
         $updaterecord->lastexecutiontime = round((microtime(true) - $starttime) * 1000);
         $this->config->lastexecutiontime = $updaterecord->lastexecutiontime;
+        $permissionscache = \cache::make('block_configurable_reports', 'permissions');
+        $permissionscache->set($updaterecord->id, []);
         $DB->update_record('block_configurable_reports', $updaterecord);
 
         return $results;
